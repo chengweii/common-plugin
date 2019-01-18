@@ -1,3 +1,5 @@
+package com.hw.lock;
+
 import com.hw.lock.DistributedLock;
 import com.hw.lock.annotation.DispersedLock;
 
@@ -21,7 +23,7 @@ public class Demo {
             return DistributedLock.Result.success(1021, "通过拉姆达表达式使用", outerData);
         });
 
-        System.out.println(outerData);
+        System.out.println(String.format("锁定结果：%s",result.isSuccess()));
 
         // 通过匿名内部类
         DistributedLock.Result<String> result1 = distributedLock.lock("2018110021002", 5000, DistributedLock.LockMode.TRY_LOCK, new DistributedLock.LockAction<String>() {
@@ -31,6 +33,8 @@ public class Demo {
                 return DistributedLock.Result.success(1031, "通过匿名内部类使用", new String());
             }
         });
+
+        System.out.println(String.format("锁定结果：%s",result1.isSuccess()));
     }
 
     /**
