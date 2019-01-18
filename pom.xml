@@ -8,6 +8,7 @@
     <name>common-plugin</name>
     <modules>
         <module>distributed-lock</module>
+        <module>distributed-tcc</module>
     </modules>
     <groupId>com.hw</groupId>
     <artifactId>common-plugin</artifactId>

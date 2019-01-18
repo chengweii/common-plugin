@@ -33,7 +33,7 @@ public class RedisDistributedLock implements DistributedLock {
     @Override
     public String lock(String lockKey, int timeout, LockMode lockMode) {
         if (Strings.isNullOrEmpty(lockKey) || timeout <= 0 || lockMode == null) {
-            LOGGER.error("lock failed:lockKey={},timeout={},lockMode={}", lockKey, timeout, lockMode);
+            LOGGER.error("锁定失败:lockKey={},timeout={},lockMode={}", lockKey, timeout, lockMode);
             return null;
         }
         String secretKey = UUID.randomUUID().toString();
@@ -44,7 +44,7 @@ public class RedisDistributedLock implements DistributedLock {
                 return tryLock(lockKey, secretKey, timeout);
             }
         } catch (Throwable e) {
-            LOGGER.error("lock failed:lockKey={},secretKey={},timeout={}", lockKey, secretKey, timeout, e);
+            LOGGER.error("锁定失败:lockKey={},secretKey={},timeout={}", lockKey, secretKey, timeout, e);
         }
         return null;
     }
@@ -70,7 +70,7 @@ public class RedisDistributedLock implements DistributedLock {
     @Override
     public boolean unlock(String lockKey, String secretKey) {
         if (Strings.isNullOrEmpty(lockKey) || Strings.isNullOrEmpty(secretKey)) {
-            LOGGER.error("unlock failed:lockKey={},secretKey={}", lockKey, secretKey);
+            LOGGER.error("解锁失败:lockKey={},secretKey={}", lockKey, secretKey);
             return false;
         }
         try {
@@ -79,7 +79,7 @@ public class RedisDistributedLock implements DistributedLock {
                 return true;
             }
         } catch (Exception e) {
-            LOGGER.error("unlock failed:lockKey={},secretKey={}", lockKey, secretKey, e);
+            LOGGER.error("解锁失败:lockKey={},secretKey={}", lockKey, secretKey, e);
         }
         return false;
     }

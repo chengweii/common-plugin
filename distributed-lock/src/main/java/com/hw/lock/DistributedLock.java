@@ -84,7 +84,6 @@ public interface DistributedLock {
             return new Result(LOCK_SUCCESS, null, result);
         }
 
-
         /**
          * 组装锁定成功结果
          *
@@ -118,6 +117,14 @@ public interface DistributedLock {
 
         public T getResult() {
             return result;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public String getMessage() {
+            return message;
         }
     }
 
