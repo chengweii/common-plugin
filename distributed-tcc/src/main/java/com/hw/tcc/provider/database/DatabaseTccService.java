@@ -66,19 +66,6 @@ public abstract class DatabaseTccService extends BaseTccService {
         }
     }
 
-    @Override
-    public void compensate(int maxCount, int maxRetryTimes) {
-        List<Transaction> transactionList = tccPersistenceService.scan(maxCount);
-        for (Transaction transaction : transactionList) {
-            if (transaction.getRetryTimes() > maxRetryTimes) {
-                continue;
-            }
-
-            executeTccCompensateAction(transaction);
-        }
-    }
-
-
     /**
      * 执行补偿动作
      *

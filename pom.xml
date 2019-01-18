@@ -9,6 +9,7 @@
     <modules>
         <module>distributed-lock</module>
         <module>distributed-tcc</module>
+        <module>multilevel-cache</module>
     </modules>
     <groupId>com.hw</groupId>
     <artifactId>common-plugin</artifactId>
