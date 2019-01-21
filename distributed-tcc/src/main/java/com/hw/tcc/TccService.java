@@ -23,11 +23,8 @@ public interface TccService {
 
     /**
      * 补偿失败事务（执行补偿动作）
-     *
-     * @param maxCount      执行补偿动作的最大数量
-     * @param maxRetryTimes 执行补偿动作的最大重试次数
      */
-    void compensate(int maxCount, int maxRetryTimes);
+    void compensate();
 
     class Result<T> {
         /**

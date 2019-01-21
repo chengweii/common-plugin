@@ -2,6 +2,7 @@ package com.hw.tcc.provider.database;
 
 import com.google.common.collect.Lists;
 import com.hw.tcc.TccCompensateAction;
+import com.hw.tcc.config.TccConfig;
 import com.hw.tcc.persistence.TccPersistenceService;
 import com.hw.tcc.persistence.Transaction;
 import com.hw.tcc.provider.BaseTccService;
@@ -24,8 +25,8 @@ public abstract class DatabaseTccService extends BaseTccService {
 
     protected TccPersistenceService tccPersistenceService;
 
-    public DatabaseTccService(TccSerializer tccSerializer, TccPersistenceService tccPersistenceService) {
-        super(tccSerializer);
+    public DatabaseTccService(TccSerializer tccSerializer, TccPersistenceService tccPersistenceService, TccConfig tccConfig) {
+        super(tccSerializer,tccConfig);
         this.tccPersistenceService = tccPersistenceService;
     }
 
@@ -43,7 +44,7 @@ public abstract class DatabaseTccService extends BaseTccService {
             transaction.setNextAt(now);
             transaction.setRetryTimes(0);
             transaction.setStatus(Transaction.Status.EXECUTING.getValue());
-            if (!tccPersistenceService.begain(transaction)) {
+            if (!tccPersistenceService.begin(transaction)) {
                 throw new RuntimeException("分布式补偿事务开始失败！");
             }
 
@@ -59,6 +60,7 @@ public abstract class DatabaseTccService extends BaseTccService {
             throw e;
         } finally {
             if (isRetry) {
+                transaction.setStatus(Transaction.Status.RETRYING.getValue());
                 tccPersistenceService.retry(transaction);
             } else {
                 tccPersistenceService.end(transaction);
@@ -72,6 +74,10 @@ public abstract class DatabaseTccService extends BaseTccService {
      * @param transaction 事务实体
      */
     protected void executeTccCompensateAction(Transaction transaction) {
+        if (transaction.getRetryTimes() > tccConfig.getMaxRetryTimes()) {
+            return;
+        }
+
         TccCompensateAction tccCompensateAction = getTccCompensateAction(transaction.getCompensateActionClz());
         if (tccCompensateAction == null) {
             LOGGER.error("分布式补偿事务重试失败，没有找到对应的补偿动作对象：transaction={}", transaction);
@@ -103,6 +109,8 @@ public abstract class DatabaseTccService extends BaseTccService {
             if (isRetry) {
                 Date nextExecuteTime = getNextExecuteTime(transaction);
                 transaction.setNextAt(nextExecuteTime);
+                transaction.setExecuteAt(new Date());
+                transaction.setStatus(Transaction.Status.RETRYING.getValue());
                 tccPersistenceService.retry(transaction);
             } else {
                 tccPersistenceService.end(transaction);
@@ -131,6 +139,7 @@ public abstract class DatabaseTccService extends BaseTccService {
 
     /**
      * 执行补偿动作时锁定事务（避免并发问题）
+     * 注意：集群运行环境请重写此方法，务必加分布式锁保证并发安全。
      *
      * @param transaction 事务实体
      * @return 锁定结果
@@ -139,6 +148,7 @@ public abstract class DatabaseTccService extends BaseTccService {
 
     /**
      * 执行补偿动作后解锁事务
+     * 注意：集群运行环境请重写此方法，务必加分布式锁保证并发安全。
      *
      * @param transaction 事务实体
      */

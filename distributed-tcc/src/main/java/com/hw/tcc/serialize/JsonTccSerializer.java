@@ -17,10 +17,12 @@ public class JsonTccSerializer implements TccSerializer {
         gson = gsonBuilder.setPrettyPrinting().serializeNulls().create();
     }
 
+    @Override
     public String serialize(Object transactionData) {
         return gson.toJson(transactionData);
     }
 
+    @Override
     public <T> T deserialize(String transactionData, Class<T> clz) {
         return gson.fromJson(transactionData, clz);
     }

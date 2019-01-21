@@ -2,6 +2,7 @@ package com.hw.tcc.provider;
 
 import com.hw.tcc.TccCompensateAction;
 import com.hw.tcc.TccService;
+import com.hw.tcc.config.TccConfig;
 import com.hw.tcc.persistence.Transaction;
 import com.hw.tcc.serialize.TccSerializer;
 
@@ -17,9 +18,12 @@ import java.util.Map;
  */
 public abstract class BaseTccService implements TccService {
     protected TccSerializer tccSerializer;
+    protected TccConfig tccConfig;
 
-    public BaseTccService(TccSerializer tccSerializer) {
+    public BaseTccService(TccSerializer tccSerializer,
+                          TccConfig tccConfig) {
         this.tccSerializer = tccSerializer;
+        this.tccConfig = tccConfig;
     }
 
     @Resource

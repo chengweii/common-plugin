@@ -14,7 +14,7 @@ public class Transaction {
      */
     private Long id;
     /**
-     * 事务ID
+     * 补偿事务业务主键
      */
     private String transactionId;
     /**
@@ -30,7 +30,7 @@ public class Transaction {
      */
     private String transactionData;
     /**
-     * 重试次数
+     * 已重试次数
      */
     private Integer retryTimes;
     /**

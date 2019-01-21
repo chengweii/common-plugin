@@ -1,6 +1,7 @@
 package com.hw.tcc.provider.mq;
 
 import com.hw.tcc.TccCompensateAction;
+import com.hw.tcc.config.TccConfig;
 import com.hw.tcc.persistence.Transaction;
 import com.hw.tcc.provider.BaseTccService;
 import com.hw.tcc.serialize.TccSerializer;
@@ -14,8 +15,8 @@ import java.util.Date;
  * @date 2019/1/18
  */
 public class MQTccService extends BaseTccService {
-    public MQTccService(TccSerializer tccSerializer) {
-        super(tccSerializer);
+    public MQTccService(TccSerializer tccSerializer, TccConfig tccConfig) {
+        super(tccSerializer, tccConfig);
     }
 
     @Override
@@ -29,7 +30,6 @@ public class MQTccService extends BaseTccService {
     }
 
     @Override
-    public void compensate(int maxCount, int maxRetryTimes) {
-
+    public void compensate() {
     }
 }
