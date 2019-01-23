@@ -9,8 +9,9 @@
     <modules>
         <module>distributed-lock</module>
         <module>distributed-tcc</module>
-        <module>multilevel-cache</module>
         <module>flow-filter</module>
+        <module>distributed-cache</module>
+        <module>flow-limiter</module>
     </modules>
     <groupId>com.hw</groupId>
     <artifactId>common-plugin</artifactId>
