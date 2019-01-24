@@ -12,6 +12,7 @@
         <module>flow-filter</module>
         <module>distributed-cache</module>
         <module>flow-limiter</module>
+        <module>param-validator</module>
     </modules>
     <groupId>com.hw</groupId>
     <artifactId>common-plugin</artifactId>
