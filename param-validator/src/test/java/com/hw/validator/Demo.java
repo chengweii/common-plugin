@@ -30,6 +30,8 @@ public class Demo {
         SimpleValidator.checkArgument(() -> {
             return "10e3".equals(bean.getAppId());
         }, "appId不正确:%s", bean.getAppId());
+
+        SimpleValidator.checkArgument("10e3".equals(bean.getAppId()), "appId不正确:%s", bean.getAppId());
     }
 
     public static void hibernateValidatorTest() {
