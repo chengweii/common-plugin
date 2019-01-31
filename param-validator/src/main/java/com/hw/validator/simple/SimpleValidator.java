@@ -59,6 +59,7 @@ public class SimpleValidator {
         }
     }
 
+    @FunctionalInterface
     public interface Checker {
         boolean check();
     }

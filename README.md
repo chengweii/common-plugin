@@ -18,3 +18,9 @@
 
 ## 【flow-limiter】流量控制组件（待开发）
 封装阿里的 Sentinel，实现限流、降级、过载保护的流控功能，提供应用级的保护与监控。
+
+## 【param-validator】参数验证组件（已完成）
+提供了两种参数验证器，一种基于hibernate-validator的参数验证器，一种类似于Guava的Precondition的参数验证器。
+
+## 【sharding-data】分库分表组件（待开发）
+封装sharding-jdbc，实现大数据量表的分库分表。
