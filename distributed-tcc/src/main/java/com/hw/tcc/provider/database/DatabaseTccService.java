@@ -26,7 +26,12 @@ public abstract class DatabaseTccService extends BaseTccService {
     protected TccPersistenceService tccPersistenceService;
 
     public DatabaseTccService(TccSerializer tccSerializer, TccPersistenceService tccPersistenceService, TccConfig tccConfig) {
-        super(tccSerializer,tccConfig);
+        super(tccSerializer, tccConfig);
+        this.tccPersistenceService = tccPersistenceService;
+    }
+
+    public DatabaseTccService(TccPersistenceService tccPersistenceService, TccConfig tccConfig) {
+        super(tccConfig);
         this.tccPersistenceService = tccPersistenceService;
     }
 

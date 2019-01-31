@@ -84,7 +84,7 @@ public interface TccService {
          * @param <T>    动作执行结果类型
          * @return 锁定结果
          */
-        public static <T> Result<T> compensate(T result) {
+        public static <T> Result<T> failed(T result) {
             return new Result(TCC_SUCCESS, null, result, true);
         }
 
@@ -96,7 +96,7 @@ public interface TccService {
          * @param <T>    动作执行结果类型
          * @return 锁定结果
          */
-        public static <T> Result<T> compensate(int code, String message, T result) {
+        public static <T> Result<T> failed(int code, String message, T result) {
             return new Result(code, message, result, true);
         }
 

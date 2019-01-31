@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+    <bean id="tccPersistenceService" class="com.hw.tcc.provider.TccPersistenceServiceImpl">
+    </bean>
+
+    <bean id="tccConfig" class="com.hw.tcc.config.TccConfig">
+        <property name="maximumPoolSize" value="5"></property>
+        <property name="keepAliveTime" value="60000"></property>
+        <property name="queueCapacity" value="8000"></property>
+        <property name="transactionTimeout" value="3000"></property>
+        <property name="maxCount" value="1000"></property>
+        <property name="maxRetryTimes" value="5"></property>
+    </bean>
+
+    <bean id="tccService" class="com.hw.tcc.provider.database.SimpleDatabaseTccService">
+        <constructor-arg name="tccPersistenceService" ref="tccPersistenceService"/>
+        <constructor-arg name="tccConfig" ref="tccConfig"/>
+    </bean>
+</beans>

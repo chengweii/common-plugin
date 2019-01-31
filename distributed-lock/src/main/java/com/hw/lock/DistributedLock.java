@@ -41,6 +41,7 @@ public interface DistributedLock {
     /**
      * 锁定动作
      */
+    @FunctionalInterface
     interface LockAction<R> {
         /**
          * 执行锁定动作

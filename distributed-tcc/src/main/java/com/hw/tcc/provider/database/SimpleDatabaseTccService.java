@@ -20,6 +20,10 @@ public class SimpleDatabaseTccService extends DatabaseTccService {
         super(tccSerializer, tccPersistenceService, tccConfig);
     }
 
+    public SimpleDatabaseTccService(TccPersistenceService tccPersistenceService, TccConfig tccConfig) {
+        super(tccPersistenceService, tccConfig);
+    }
+
     @Override
     public void compensate() {
         List<Transaction> transactionList = tccPersistenceService.scan(tccConfig.getMaxCount());

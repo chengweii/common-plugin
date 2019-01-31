@@ -4,6 +4,7 @@ import com.hw.tcc.TccCompensateAction;
 import com.hw.tcc.TccService;
 import com.hw.tcc.config.TccConfig;
 import com.hw.tcc.persistence.Transaction;
+import com.hw.tcc.serialize.JsonTccSerializer;
 import com.hw.tcc.serialize.TccSerializer;
 
 import javax.annotation.Resource;
@@ -24,6 +25,10 @@ public abstract class BaseTccService implements TccService {
                           TccConfig tccConfig) {
         this.tccSerializer = tccSerializer;
         this.tccConfig = tccConfig;
+    }
+
+    public BaseTccService(TccConfig tccConfig) {
+        this(new JsonTccSerializer(), tccConfig);
     }
 
     @Resource

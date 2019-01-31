@@ -22,6 +22,16 @@ public class MultiDatabaseTccService extends DatabaseTccService {
                                    TccPersistenceService tccPersistenceService,
                                    TccConfig tccConfig) {
         super(tccSerializer, tccPersistenceService, tccConfig);
+        this.init(tccConfig);
+    }
+
+    public MultiDatabaseTccService(TccPersistenceService tccPersistenceService,
+                                   TccConfig tccConfig) {
+        super(tccPersistenceService, tccConfig);
+        this.init(tccConfig);
+    }
+
+    private void init(TccConfig tccConfig) {
         executeTccCompensateActionExecutor = new ThreadPoolExecutor(1, tccConfig.getMaximumPoolSize(), tccConfig.getKeepAliveTime(), TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(tccConfig.getQueueCapacity()), new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
