@@ -7,4 +7,21 @@ package com.hw.cache;
  * @date 2019/1/23
  */
 public interface DistributedCache {
+    static class ResultWrapper<P, R> {
+        private P param;
+        private R result;
+
+        public ResultWrapper(P param, R result) {
+            this.param = param;
+            this.result = result;
+        }
+
+        public P getParam() {
+            return param;
+        }
+
+        public R getResult() {
+            return result;
+        }
+    }
 }

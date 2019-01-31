@@ -19,15 +19,15 @@ public class CacheAsideCacheImpl implements CacheAsideCache {
         this.cacheSerializer = cacheSerializer;
     }
 
-    public <P, R> R get(String cacheKey, int expire, P queryParam, DaoAction<R> daoAction) {
+    public <P, R> R get(String cacheKey, int expire,P param, DaoAction<R> daoAction) {
         String deserializeData = jedis.get(cacheKey);
         if (deserializeData != null) {
             ResultWrapper<P, R> result = cacheSerializer.deserialize(deserializeData, ResultWrapper.class);
-            return result.result;
+            return result.getResult();
         }
 
         R result = daoAction.execute();
-        ResultWrapper<P, R> resultWrapper = new ResultWrapper<P, R>(queryParam, result);
+        ResultWrapper<P, R> resultWrapper = new ResultWrapper<P, R>(null, result);
         String serializeData = cacheSerializer.serialize(resultWrapper);
         jedis.set(cacheKey, serializeData);
         jedis.expire(cacheKey, expire);
@@ -40,21 +40,4 @@ public class CacheAsideCacheImpl implements CacheAsideCache {
         R execute();
     }
 
-    static class ResultWrapper<P, R> {
-        private P queryParam;
-        private R result;
-
-        public ResultWrapper(P queryParam, R result) {
-            this.queryParam = queryParam;
-            this.result = result;
-        }
-
-        public P getQueryParam() {
-            return queryParam;
-        }
-
-        public R getResult() {
-            return result;
-        }
-    }
 }
