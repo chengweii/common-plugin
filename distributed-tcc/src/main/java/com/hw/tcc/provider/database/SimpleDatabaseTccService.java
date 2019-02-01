@@ -2,7 +2,7 @@ package com.hw.tcc.provider.database;
 
 import com.hw.tcc.config.TccConfig;
 import com.hw.tcc.persistence.TccPersistenceService;
-import com.hw.tcc.persistence.Transaction;
+import com.hw.tcc.persistence.TccTransaction;
 import com.hw.tcc.serialize.TccSerializer;
 
 import java.util.List;
@@ -26,20 +26,25 @@ public class SimpleDatabaseTccService extends DatabaseTccService {
 
     @Override
     public void compensate() {
-        List<Transaction> transactionList = tccPersistenceService.scan(tccConfig.getMaxCount());
-        for (Transaction transaction : transactionList) {
+        List<TccTransaction> transactionList = tccPersistenceService.scan(tccConfig.getMaxCount());
+
+        if (transactionList == null || transactionList.size() == 0) {
+            return;
+        }
+        
+        for (TccTransaction transaction : transactionList) {
             executeTccCompensateAction(transaction);
         }
     }
 
     @Override
-    protected boolean lockTransactionForCompensate(Transaction transaction) {
+    protected boolean lockTransactionForCompensate(TccTransaction transaction) {
         // 注意：集群运行环境请重写此方法，务必加分布式锁保证并发安全。
         return true;
     }
 
     @Override
-    protected void unlockTransactionForCompensate(Transaction transaction) {
+    protected void unlockTransactionForCompensate(TccTransaction transaction) {
         // 注意：集群运行环境请重写此方法，务必加分布式锁保证并发安全。
     }
 }

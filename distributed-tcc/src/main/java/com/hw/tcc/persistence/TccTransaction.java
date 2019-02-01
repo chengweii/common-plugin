@@ -8,7 +8,7 @@ import java.util.Date;
  * @author chengwei11
  * @date 2019/1/18
  */
-public class Transaction {
+public class TccTransaction {
     /**
      * 事务实体ID
      */
@@ -21,6 +21,10 @@ public class Transaction {
      * 事务补偿动作类型
      */
     private String compensateActionClz;
+    /**
+     * 事务补偿动作序号
+     */
+    private String actionSerialNo;
     /**
      * 事务状态
      */
@@ -106,12 +110,21 @@ public class Transaction {
         this.executeAt = executeAt;
     }
 
+    public String getActionSerialNo() {
+        return actionSerialNo;
+    }
+
+    public void setActionSerialNo(String actionSerialNo) {
+        this.actionSerialNo = actionSerialNo;
+    }
+
     @Override
     public String toString() {
-        return "Transaction{" +
+        return "TccTransaction{" +
                 "id=" + id +
                 ", transactionId='" + transactionId + '\'' +
                 ", compensateActionClz='" + compensateActionClz + '\'' +
+                ", actionSerialNo='" + actionSerialNo + '\'' +
                 ", status=" + status +
                 ", transactionData='" + transactionData + '\'' +
                 ", retryTimes=" + retryTimes +

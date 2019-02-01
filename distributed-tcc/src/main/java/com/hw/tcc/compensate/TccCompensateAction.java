@@ -1,4 +1,4 @@
-package com.hw.tcc;
+package com.hw.tcc.compensate;
 
 /**
  * 补偿动作
@@ -11,9 +11,8 @@ public interface TccCompensateAction {
     /**
      * 执行补偿动作
      *
-     * @param transactionId   事务ID
-     * @param transactionData 事务依赖数据对象
+     * @param tccTransactionData 事务依赖数据对象
      * @return 是否成功（补偿失败会执行重试）
      */
-    boolean execute(String transactionId, String transactionData);
+    boolean execute(TccTransactionData tccTransactionData);
 }

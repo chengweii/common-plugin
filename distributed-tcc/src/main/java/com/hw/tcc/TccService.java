@@ -1,5 +1,8 @@
 package com.hw.tcc;
 
+import com.hw.tcc.compensate.ActionSerialNoEnum;
+import com.hw.tcc.compensate.TccCompensateAction;
+
 /**
  * 分布式补偿事务
  *
@@ -11,7 +14,8 @@ public interface TccService {
     /**
      * 执行补偿事务
      *
-     * @param transactionId       事务ID
+     * @param actionSerialNo      事务补偿动作序号：补偿类中只存在一个补偿动作时可以不填
+     * @param transactionId       事务ID：用于支持补偿动作重试时的业务去重和幂等
      * @param transactionData     事务依赖数据对象
      * @param compensateActionClz 事务补偿动作类型
      * @param transactionAction   事务动作
@@ -19,7 +23,7 @@ public interface TccService {
      * @param <R>                 事务依赖数据对象类型
      * @return 事务动作返回结果
      */
-    <T, R> Result<T> execute(String transactionId, R transactionData, Class<? extends TccCompensateAction> compensateActionClz, TransactionAction<T> transactionAction) throws Throwable;
+    <T, R> Result<T> execute(ActionSerialNoEnum actionSerialNo, String transactionId, R transactionData, Class<? extends TccCompensateAction> compensateActionClz, TransactionAction<T> transactionAction) throws Throwable;
 
     /**
      * 补偿失败事务（执行补偿动作）
@@ -85,7 +89,7 @@ public interface TccService {
          * @return 锁定结果
          */
         public static <T> Result<T> failed(T result) {
-            return new Result(TCC_SUCCESS, null, result, true);
+            return new Result(TCC_FAILED, null, result, true);
         }
 
         /**
@@ -123,5 +127,4 @@ public interface TccService {
     interface TransactionAction<T> {
         Result<T> execute();
     }
-
 }

@@ -1,8 +1,9 @@
 package com.hw.tcc.provider.mq;
 
-import com.hw.tcc.TccCompensateAction;
+import com.hw.tcc.compensate.ActionSerialNoEnum;
+import com.hw.tcc.compensate.TccCompensateAction;
 import com.hw.tcc.config.TccConfig;
-import com.hw.tcc.persistence.Transaction;
+import com.hw.tcc.persistence.TccTransaction;
 import com.hw.tcc.provider.BaseTccService;
 import com.hw.tcc.serialize.TccSerializer;
 
@@ -19,13 +20,17 @@ public class MQTccService extends BaseTccService {
         super(tccSerializer, tccConfig);
     }
 
+    public MQTccService(TccConfig tccConfig) {
+        super(tccConfig);
+    }
+
     @Override
-    protected Date getNextExecuteTime(Transaction transaction) {
+    protected Date getNextExecuteTime(TccTransaction transaction) {
         return null;
     }
 
     @Override
-    public <T, R> Result<T> execute(String transactionId, R transactionData, Class<? extends TccCompensateAction> compensateActionClz, TransactionAction<T> transactionAction) throws Throwable {
+    public <T, R> Result<T> execute(ActionSerialNoEnum actionSerialNo, String transactionId, R transactionData, Class<? extends TccCompensateAction> compensateActionClz, TransactionAction<T> transactionAction) throws Throwable {
         return null;
     }
 

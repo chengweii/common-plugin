@@ -15,7 +15,7 @@ public interface TccPersistenceService {
      * @param transaction 事务数据
      * @return 操作结果
      */
-    boolean begin(Transaction transaction);
+    boolean begin(TccTransaction transaction);
 
     /**
      * 结束事务
@@ -24,7 +24,16 @@ public interface TccPersistenceService {
      * @param transaction 事务数据
      * @return 操作结果
      */
-    boolean end(Transaction transaction);
+    boolean end(TccTransaction transaction);
+
+    /**
+     * 失败事务
+     * 注意：补偿事务重试指定最大次数后失败（此处可以添加报警逻辑）
+     *
+     * @param transaction 事务数据
+     * @return 操作结果
+     */
+    boolean fail(TccTransaction transaction);
 
     /**
      * 重试事务
@@ -32,7 +41,7 @@ public interface TccPersistenceService {
      * @param transaction 事务数据
      * @return 操作结果
      */
-    boolean retry(Transaction transaction);
+    boolean retry(TccTransaction transaction);
 
     /**
      * 扫描待补偿事务
@@ -41,5 +50,5 @@ public interface TccPersistenceService {
      * @param maxCount
      * @return 待补偿事务列表
      */
-    List<Transaction> scan(int maxCount);
+    List<TccTransaction> scan(int maxCount);
 }
