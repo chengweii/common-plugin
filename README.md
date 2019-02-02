@@ -1,4 +1,6 @@
 # 通用组件
+## 【delay-job】延时任务组件（开发中）
+基于 redis/数据库 实现的分布式延时任务组件。
 ## 【distributed-lock】分布式锁组件（已完成）
 基于 redis setNx 实现，通过命令、注解方式使用分布式锁。
 ## 【distributed-tcc】分布式补偿事务(TCC)组件（开发中）

@@ -14,6 +14,7 @@
         <module>flow-limiter</module>
         <module>param-validator</module>
         <module>sharding-data</module>
+        <module>delay-job</module>
     </modules>
     <groupId>com.hw</groupId>
     <artifactId>common-plugin</artifactId>
