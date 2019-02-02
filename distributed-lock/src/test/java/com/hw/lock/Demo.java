@@ -18,7 +18,7 @@ public class Demo {
         String outerData = "外部依赖数据";
 
         // 通过拉姆达表达式
-        DistributedLock.Result<String> result = distributedLock.<String>lock("2018110021002", 5000, DistributedLock.LockMode.TRY_LOCK, () -> {
+        DistributedLock.Result<String> result = distributedLock.<String>lock("2018110021002", 5000, DistributedLock.LockMode.FAIL_FAST, () -> {
             System.out.println(outerData);
             return DistributedLock.Result.success(1021, "通过拉姆达表达式使用", outerData);
         });
@@ -26,7 +26,7 @@ public class Demo {
         System.out.println(String.format("锁定结果：%s",result.isSuccess()));
 
         // 通过匿名内部类
-        DistributedLock.Result<String> result1 = distributedLock.lock("2018110021002", 5000, DistributedLock.LockMode.TRY_LOCK, new DistributedLock.LockAction<String>() {
+        DistributedLock.Result<String> result1 = distributedLock.lock("2018110021002", 5000, DistributedLock.LockMode.FAIL_FAST, new DistributedLock.LockAction<String>() {
             @Override
             public DistributedLock.Result<String> execute() {
                 System.out.println(outerData);
@@ -43,7 +43,7 @@ public class Demo {
      * @param businessKey 业务主键
      * @param otherData   其他业务数据
      */
-    @DispersedLock(lockKey = "#businessKey", timeout = 5000, lockMode = DistributedLock.LockMode.TRY_LOCK)
+    @DispersedLock(lockKey = "#businessKey", timeout = 5000, lockMode = DistributedLock.LockMode.FAIL_FAST)
     public void businessAction(String businessKey, Object otherData) {
 
     }

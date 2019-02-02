@@ -134,12 +134,12 @@ public interface DistributedLock {
      */
     enum LockMode {
         /**
-         * 等待锁（获取失败等待重试）
+         * 失败重试型（获取锁失败重试，可能会带来延迟）
          */
-        WAIT_LOCK,
+        FAIL_OVER,
         /**
-         * 尝试锁（获取失败不重试）
+         * 快速失败型（获取锁失败不重试）
          */
-        TRY_LOCK;
+        FAIL_FAST;
     }
 }

@@ -12,18 +12,14 @@ import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
 
-interface DemoServiceBeanName {
-    String SERVICE_BEAN_NAME = "tccTestService";
-}
-
 /**
  * 补偿事务测试服务
  *
  * @author chengwei11
  * @since 2019/1/31
  */
-@Service(value = DemoServiceBeanName.SERVICE_BEAN_NAME)
-public class Demo implements DemoServiceBeanName, TccCompensateAction {
+@Service
+public class Demo implements TccCompensateAction {
     @Resource
     private TccService tccService;
 
@@ -32,7 +28,7 @@ public class Demo implements DemoServiceBeanName, TccCompensateAction {
         TccRetryJob tccRetryJob = appContext.getBean(TccRetryJob.class);
         tccRetryJob.execute();
 
-        Demo demo = (Demo) appContext.getBean(DemoServiceBeanName.SERVICE_BEAN_NAME);
+        Demo demo = appContext.getBean(Demo.class);
         demo.test();
     }
 
@@ -101,5 +97,4 @@ public class Demo implements DemoServiceBeanName, TccCompensateAction {
         System.out.println("执行补偿操作1");
         return true;
     }
-
 }

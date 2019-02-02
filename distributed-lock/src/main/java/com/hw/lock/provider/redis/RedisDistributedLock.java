@@ -38,7 +38,7 @@ public class RedisDistributedLock implements DistributedLock {
         }
         String secretKey = UUID.randomUUID().toString();
         try {
-            if (lockMode == LockMode.WAIT_LOCK) {
+            if (lockMode == LockMode.FAIL_OVER) {
                 return waitLock(lockKey, secretKey, timeout);
             } else {
                 return tryLock(lockKey, secretKey, timeout);
