@@ -1,5 +1,6 @@
 package com.hw.cache.provider.autorefresh;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hw.cache.ExpiredAutoRefreshCache;
 import com.hw.cache.provider.cacheaside.RedisCacheAsideCache;
 import com.hw.cache.serialize.CacheSerializer;
@@ -46,7 +47,8 @@ public class RedisExpiredAutoRefreshCache extends RedisCacheAsideCache implement
         this.cacheRefreshAdvanceTime = cacheRefreshAdvanceTime;
         this.cacheRefreshPeriodTime = cacheRefreshPeriodTime;
         this.cacheRefreshRecordsExpireTime = cacheRefreshPeriodTime * 2;
-        refreshExecutor = new ScheduledThreadPoolExecutor(1);
+        refreshExecutor = new ScheduledThreadPoolExecutor(1, new ThreadFactoryBuilder()
+                .setNameFormat("RedisExpiredAutoRefreshCache-thread-%d").build());
     }
 
     @Override
@@ -67,30 +69,30 @@ public class RedisExpiredAutoRefreshCache extends RedisCacheAsideCache implement
         }
 
         refreshExecutor.scheduleAtFixedRate(() -> {
-            long start = System.currentTimeMillis();
-            long end = start + cacheRefreshPeriodTime;
+            long start = 0;
+            long end = System.currentTimeMillis() + cacheRefreshAdvanceTime;
 
-            Set<String> result = jedis.zrevrangeByScore(REDIS_EXPIRED_AUTO_REFRESH_CACHE_KEY, end, start);
+            Set<String> result = jedis.zrangeByScore(REDIS_EXPIRED_AUTO_REFRESH_CACHE_KEY, start, end);
 
             if (result == null || result.size() == 0) {
                 return;
             }
 
-            result.forEach(cacheKey -> {
+            result.parallelStream().map(cacheKey -> {
                 String deserializeData = jedis.get(cacheKey);
                 if (deserializeData == null) {
-                    return;
+                    return null;
                 }
 
                 ResultWrapper resultWrapper = cacheSerializer.deserialize(deserializeData, ResultWrapper.class);
 
-                String daoActionClzName = resultWrapper.getDaoActionClzName();
-
-                Optional<DaoAction> daoAction = daoActions.stream().filter(action -> action.getClass().getName().equals(daoActionClzName)).findFirst();
+                Optional<DaoAction> daoAction = daoActions.stream().filter(action -> action.getClass().getName().equals(resultWrapper.getDaoActionClzName())).findFirst();
 
                 if (daoAction.isPresent()) {
-                    reload(resultWrapper.getGroup(), cacheKey, resultWrapper.getExpireTime(), resultWrapper.getParam(), daoAction.get());
+                    load(resultWrapper.getGroup(), cacheKey, resultWrapper.getExpireTime(), resultWrapper.getParam(), daoAction.get(), true);
                 }
+
+                return null;
             });
 
         }, 0, cacheRefreshPeriodTime, TimeUnit.MILLISECONDS);

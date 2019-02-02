@@ -6,14 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.UUID;
 
 /**
  * 基于Redis的旁路缓存服务
- * 注意：并发获取缓存源数据（查库）时，目前通过本地锁进行的控制，如果集群服务器不是很多的情况，本地锁控制已经足以应付；
- * 另外各集群服务器的网络负载等情况不一定相同，不使用分布式锁控制也可以一定程度上缓解单台服务器问题造成的单点问题。
+ * 注意：并发获取缓存源数据（查库）时，通过锁进行控制,避免重新加载源数据压力过大情况。
  *
  * @author chengwei11
  * @date 2019/1/31
@@ -21,14 +18,17 @@ import java.util.concurrent.locks.ReentrantLock;
 public class RedisCacheAsideCache implements CacheAsideCache {
     private final static Logger LOGGER = LoggerFactory.getLogger(RedisCacheAsideCache.class);
 
+    private static final String OK = "OK";
     private static final String NX = "NX";
+    private static final String EX = "EX";
     private static final String PX = "PX";
+
+    private final static int MAX_TIME_INTERVAL = 100;
+    private final static String CACHE_LOAD_LOCK_KEY = "CACHE_LOAD_LOCK_KEY_";
 
     protected Jedis jedis;
     protected CacheSerializer cacheSerializer;
     protected int daoActionTimeout;
-
-    private final ReentrantLock lock = new ReentrantLock();
 
     public RedisCacheAsideCache(Jedis jedis, CacheSerializer cacheSerializer, int daoActionTimeout) {
         this.jedis = jedis;
@@ -44,16 +44,20 @@ public class RedisCacheAsideCache implements CacheAsideCache {
             return result.getResult();
         }
 
-        return reload(group, cacheKey, expire, param, daoAction);
+        return load(group, cacheKey, expire, param, daoAction, false);
     }
 
-    protected <P, R> R reload(String group, String cacheKey, long expire, P param, DaoAction<P, R> daoAction) {
+    protected <P, R> R load(String group, String cacheKey, long expire, P param, DaoAction<P, R> daoAction, boolean forceUpdate) {
+        String secretKey = lock(cacheKey, daoActionTimeout);
+
         try {
-            if (lock.tryLock(daoActionTimeout, TimeUnit.MILLISECONDS)) {
-                String deserializeData = jedis.get(cacheKey);
-                if (deserializeData != null) {
-                    ResultWrapper<P, R> result = cacheSerializer.deserialize(deserializeData, ResultWrapper.class);
-                    return result.getResult();
+            if (secretKey != null) {
+                if (!forceUpdate) {
+                    String deserializeData = jedis.get(cacheKey);
+                    if (deserializeData != null) {
+                        ResultWrapper<P, R> result = cacheSerializer.deserialize(deserializeData, ResultWrapper.class);
+                        return result.getResult();
+                    }
                 }
 
                 R result = daoAction.execute(param);
@@ -63,14 +67,36 @@ public class RedisCacheAsideCache implements CacheAsideCache {
 
                 return result;
             }
-        } catch (InterruptedException t) {
+        } catch (Throwable t) {
             LOGGER.error("获取缓存源数据时锁定失败：cacheKey={}", cacheKey, t);
         } finally {
             after(group, cacheKey, expire, param, daoAction);
-            lock.unlock();
+            unlock(cacheKey, secretKey);
         }
 
         return null;
+    }
+
+    private String lock(String lockKey, int timeout) {
+        String secretKey = UUID.randomUUID().toString();
+        long end = System.currentTimeMillis() + timeout;
+        while (System.currentTimeMillis() < end) {
+            if (OK.equals(jedis.set(CACHE_LOAD_LOCK_KEY + lockKey, secretKey, NX, PX, timeout))) {
+                return secretKey;
+            }
+            try {
+                Thread.sleep(Double.valueOf(Math.random() * MAX_TIME_INTERVAL).longValue());
+            } catch (InterruptedException e) {
+                LOGGER.error("获取缓存源数据时锁定等待失败：lockKey={}", lockKey, e);
+            }
+        }
+        return null;
+    }
+
+    private void unlock(String lockKey, String secretKey) {
+        if (secretKey.equals(jedis.get(CACHE_LOAD_LOCK_KEY + lockKey))) {
+            jedis.del(CACHE_LOAD_LOCK_KEY + lockKey);
+        }
     }
 
     protected <P, R> void after(String group, String cacheKey, long expire, P param, DaoAction<P, R> daoAction) {

@@ -35,6 +35,12 @@
             <artifactId>spring-beans</artifactId>
             <version>4.3.12.RELEASE</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>16.0.1</version>
+        </dependency>
     </dependencies>
 
     <build>
