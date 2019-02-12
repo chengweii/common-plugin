@@ -50,11 +50,7 @@ public class MultiDatabaseTccService extends DatabaseTccService {
 
             try {
                 result.get(tccConfig.getTransactionTimeout(), TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            } catch (TimeoutException e) {
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 throw new RuntimeException(e);
             }
         }

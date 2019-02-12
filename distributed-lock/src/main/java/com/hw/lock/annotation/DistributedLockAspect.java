@@ -32,7 +32,7 @@ public class DistributedLockAspect {
         this.distributedLock = distributedLock;
     }
 
-    @Pointcut("@within(com.paipai.lock.annotation.DistributedLock) || @annotation(com.paipai.lock.annotation.DistributedLock)")
+    @Pointcut("@within(com.hw.lock.annotation.DispersedLock) || @annotation(com.hw.lock.annotation.DispersedLock)")
     public void lockPoint() {
     }
 
