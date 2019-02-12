@@ -57,7 +57,11 @@ public class RedisExpiredAutoRefreshCache extends RedisCacheAsideCache implement
     }
 
     @Override
-    protected <P, R> void after(String group, String cacheKey, long expire, P param, DaoAction<P, R> daoAction) {
+    protected <P, R> void after(String group, String cacheKey, long expire, P param, DaoAction<P, R> daoAction, boolean loadSuccess) {
+        if (!loadSuccess) {
+            return;
+        }
+
         jedis.zadd(REDIS_EXPIRED_AUTO_REFRESH_CACHE_KEY, expire, cacheKey);
         jedis.expire(REDIS_EXPIRED_AUTO_REFRESH_CACHE_KEY, cacheRefreshRecordsExpireTime);
     }

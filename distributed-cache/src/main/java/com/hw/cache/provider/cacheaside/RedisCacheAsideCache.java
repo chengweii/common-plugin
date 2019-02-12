@@ -48,29 +48,34 @@ public class RedisCacheAsideCache implements CacheAsideCache {
     }
 
     protected <P, R> R load(String group, String cacheKey, long expire, P param, DaoAction<P, R> daoAction, boolean forceUpdate) {
+        boolean loadSuccess = false;
         String secretKey = lock(cacheKey, daoActionTimeout);
 
         try {
-            if (secretKey != null) {
-                if (!forceUpdate) {
-                    String deserializeData = jedis.get(cacheKey);
-                    if (deserializeData != null) {
-                        ResultWrapper<P, R> result = cacheSerializer.deserialize(deserializeData, ResultWrapper.class);
-                        return result.getResult();
-                    }
-                }
-
-                R result = daoAction.execute(param);
-                ResultWrapper<P, R> resultWrapper = new ResultWrapper<P, R>(param, result, expire, daoAction.getClass().getName(), group);
-                String serializeData = cacheSerializer.serialize(resultWrapper);
-                jedis.set(cacheKey, serializeData, NX, PX, expire);
-
-                return result;
+            if (secretKey == null) {
+                return null;
             }
+
+            if (!forceUpdate) {
+                String deserializeData = jedis.get(cacheKey);
+                if (deserializeData != null) {
+                    ResultWrapper<P, R> result = cacheSerializer.deserialize(deserializeData, ResultWrapper.class);
+                    return result.getResult();
+                }
+            }
+
+            R result = daoAction.execute(param);
+            ResultWrapper<P, R> resultWrapper = new ResultWrapper<P, R>(param, result, expire, daoAction.getClass().getName(), group);
+            String serializeData = cacheSerializer.serialize(resultWrapper);
+            jedis.set(cacheKey, serializeData, NX, PX, expire);
+
+            loadSuccess = true;
+
+            return result;
         } catch (Throwable t) {
             LOGGER.error("获取缓存源数据时锁定失败：cacheKey={}", cacheKey, t);
         } finally {
-            after(group, cacheKey, expire, param, daoAction);
+            after(group, cacheKey, expire, param, daoAction, loadSuccess);
             unlock(cacheKey, secretKey);
         }
 
@@ -94,11 +99,15 @@ public class RedisCacheAsideCache implements CacheAsideCache {
     }
 
     private void unlock(String lockKey, String secretKey) {
+        if (secretKey == null) {
+            return;
+        }
+
         if (secretKey.equals(jedis.get(CACHE_LOAD_LOCK_KEY + lockKey))) {
             jedis.del(CACHE_LOAD_LOCK_KEY + lockKey);
         }
     }
 
-    protected <P, R> void after(String group, String cacheKey, long expire, P param, DaoAction<P, R> daoAction) {
+    protected <P, R> void after(String group, String cacheKey, long expire, P param, DaoAction<P, R> daoAction, boolean loadSuccess) {
     }
 }
