@@ -2,6 +2,7 @@ package com.hw.limiter.module.provider;
 
 import com.hw.limiter.FlowLimiter;
 import com.hw.limiter.module.FlowLimiterModule;
+import org.springframework.stereotype.Service;
 
 /**
  * 异常熔断限流模块
@@ -9,6 +10,7 @@ import com.hw.limiter.module.FlowLimiterModule;
  * @author chengwei11
  * @date 2019/2/13
  */
+@Service
 public class ExceptionFuseLimitModule implements FlowLimiterModule {
     @Override
     public boolean check(FlowLimiter.LimitResource limitResource) {
