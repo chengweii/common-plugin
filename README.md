@@ -29,3 +29,7 @@
 
 ## 【sharding-data】分库分表组件（待开发）
 封装sharding-jdbc，实现大数据量表的分库分表。
+
+## 【link-tracker】链路跟踪组件（待开发）
+基于java-agent，实现本地调用堆栈的链路跟踪，完成性能监控等工作。
+
