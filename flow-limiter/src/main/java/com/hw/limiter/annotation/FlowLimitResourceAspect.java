@@ -37,7 +37,7 @@ public class FlowLimitResourceAspect {
         Signature signature = point.getSignature();
         Method method = ((MethodSignature) signature).getMethod();
 
-        FlowLimiter.Resource resource = buildResoure(point, method);
+        FlowLimiter.LimitResource resource = buildResoure(point, method);
 
         boolean isToLimit = flowLimiter.check(resource);
         if (isToLimit) {
@@ -50,8 +50,8 @@ public class FlowLimitResourceAspect {
         }
     }
 
-    protected FlowLimiter.Resource buildResoure(ProceedingJoinPoint point, Method method) {
-        FlowLimiter.Resource resource = new FlowLimiter.Resource();
+    protected FlowLimiter.LimitResource buildResoure(ProceedingJoinPoint point, Method method) {
+        FlowLimiter.LimitResource resource = new FlowLimiter.LimitResource();
         Map<String, Object> variables = new HashMap<String, Object>(point.getArgs().length);
         if (point.getArgs() != null) {
             String[] pNames = parameterNameDiscoverer.getParameterNames(method);
@@ -66,14 +66,14 @@ public class FlowLimitResourceAspect {
 
         String resourceKey = generateResourceKey(point);
         resource.setKey(resourceKey);
-        resource.setGroup(flowLimiter.getConfig().getGroup());
+        resource.setGroup(flowLimiter.getLimitConfig().getGroup());
 
         return resource;
     }
 
     private String generateResourceKey(ProceedingJoinPoint point) {
         Object object = point.getTarget();
-        String resourceKey = flowLimiter.getConfig().getGroup() + object.getClass().getSimpleName() + point.getSignature().getName();
+        String resourceKey = flowLimiter.getLimitConfig().getGroup() + object.getClass().getSimpleName() + point.getSignature().getName();
         return resourceKey;
     }
 }

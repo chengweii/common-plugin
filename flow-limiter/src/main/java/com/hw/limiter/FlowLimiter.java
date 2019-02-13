@@ -11,19 +11,19 @@ public interface FlowLimiter {
     /**
      * 检查资源访问是否被限制
      *
-     * @param resource 资源信息
+     * @param limitResource 资源信息
      * @return 是否被限制
      */
-    boolean check(Resource resource);
+    boolean check(LimitResource limitResource);
 
     /**
      * 获取限流器基本配置信息
      *
      * @return 配置信息
      */
-    Config getConfig();
+    LimitConfig getLimitConfig();
 
-    class Config {
+    class LimitConfig {
         /**
          * 资源分组
          */
@@ -38,7 +38,7 @@ public interface FlowLimiter {
         }
     }
 
-    class Resource {
+    class LimitResource {
         /**
          * 资源分组
          */
