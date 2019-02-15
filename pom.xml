@@ -16,6 +16,7 @@
         <module>sharding-data</module>
         <module>delay-job</module>
         <module>link-tracker</module>
+        <module>sales-promotion</module>
     </modules>
     <groupId>com.hw</groupId>
     <artifactId>common-plugin</artifactId>
