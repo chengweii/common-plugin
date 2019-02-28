@@ -57,11 +57,21 @@ public class TccPersistenceServiceImpl implements TccPersistenceService {
         return true;
     }
 
+    private static final int MAX_TRANSACTION_TIME = 3 * 60 * 60 * 1000;
+
     @Override
     public List<TccTransaction> scan(int maxCount) {
+        /* 扫描待重试的事务 */
         List<TccTransaction> result = database.stream().filter(item -> {
             return item.getStatus().equals(TccTransaction.Status.RETRYING.getValue()) && item.getNextAt().getTime() <= Calendar.getInstance().getTimeInMillis();
         }).collect(Collectors.toList());
+
+        /* 扫描执行中的超时事务 */
+        List<TccTransaction> result1 = database.stream().filter(item -> {
+            return item.getStatus().equals(TccTransaction.Status.EXECUTING.getValue()) && item.getNextAt().getTime() <= Calendar.getInstance().getTimeInMillis() - MAX_TRANSACTION_TIME;
+        }).collect(Collectors.toList());
+
+        result.addAll(result1);
 
         System.out.println(String.format("事务扫描结果：%s", result.toString()));
 
