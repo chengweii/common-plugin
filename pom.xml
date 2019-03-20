@@ -17,6 +17,8 @@
         <module>delay-job</module>
         <module>link-tracker</module>
         <module>sales-promotion</module>
+        <module>parallel-stream</module>
+        <module>link-isolation</module>
     </modules>
     <groupId>com.hw</groupId>
     <artifactId>common-plugin</artifactId>

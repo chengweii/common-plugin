@@ -11,5 +11,28 @@
 
     <artifactId>link-tracker</artifactId>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- 引用 pfinder bom -->
+            <dependency>
+                <groupId>com.jd.pfinder</groupId>
+                <artifactId>pfinder-bom</artifactId>
+                <!-- 指定版本-->
+                <!-- <version>1.0.8-20190105175923</version> -->
+                <!-- 稳定版本自动推荐-->
+                <version>1.0-SNAPSHOT</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- 引用 pfinder agent -->
+        <dependency>
+            <groupId>com.jd.pfinder</groupId>
+            <artifactId>pfinder-profiler-agent</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

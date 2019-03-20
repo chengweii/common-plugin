@@ -36,3 +36,9 @@
 ## 【sales-promotion】营销活动组件（待开发）
 常用的营销活动基础服务：团购、秒杀、拍卖、抽奖、分享裂变。
 
+## 【link-isolation】链路隔离组件（待开发）
+基于隔离规则标准实现预发环境与线上环境（Rpc、MQ、Worker、Http、流量、数据、Ngnix、）的泳道隔离。
+
+## 【parallel-stream】并行处理组件（待开发）
+基于线程池实现类似于java parallel stream的并行处理功能。
+

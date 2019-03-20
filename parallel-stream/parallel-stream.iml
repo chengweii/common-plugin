@@ -11,6 +11,5 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: com.jd.pfinder:pfinder-profiler-agent:1.0.8-20190305034943-b1ef3fe7" level="project" />
   </component>
 </module>
