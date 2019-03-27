@@ -1,6 +1,7 @@
 package com.hw.cache.provider.cacheaside;
 
 import com.hw.cache.CacheAsideCache;
+import com.hw.cache.provider.localcache.GuavaLocalCache;
 import com.hw.cache.serialize.CacheSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,10 +31,23 @@ public class RedisCacheAsideCache implements CacheAsideCache {
     protected CacheSerializer cacheSerializer;
     protected int daoActionTimeout;
 
+    private GuavaLocalCache guavaLocalCache = new GuavaLocalCache();
+
     public RedisCacheAsideCache(Jedis jedis, CacheSerializer cacheSerializer, int daoActionTimeout) {
         this.jedis = jedis;
         this.cacheSerializer = cacheSerializer;
         this.daoActionTimeout = daoActionTimeout;
+    }
+
+    @Override
+    public <P, R> R get(String group, String cacheKey, long expire, boolean enableLocalCache, P param, DaoAction<P, R> daoAction) {
+        if (enableLocalCache) {
+            return guavaLocalCache.get(group, cacheKey, expire, param, (args) -> {
+                return get(group, cacheKey, expire, args, daoAction);
+            });
+        }
+
+        return get(group, cacheKey, expire, param, daoAction);
     }
 
     @Override
@@ -44,11 +58,27 @@ public class RedisCacheAsideCache implements CacheAsideCache {
             return result.getResult();
         }
 
+        // 无效的缓存KEY直接返回空值结果，且不再缓存空值结果，避免无效KEY恶意攻击造成的缓存溢出甚至宕机情况。
+        if (isInvalidKey(group, cacheKey)) {
+            return null;
+        }
+
         return load(group, cacheKey, expire, param, daoAction, false);
+    }
+
+    @Override
+    public <R> R get(String group, String cacheKey, long expire) {
+        return null;
+    }
+
+    @Override
+    public boolean isInvalidKey(String group, String cacheKey) {
+        return false;
     }
 
     protected <P, R> R load(String group, String cacheKey, long expire, P param, DaoAction<P, R> daoAction, boolean forceUpdate) {
         boolean loadSuccess = false;
+        // 获取缓存时增加分布式锁避免多线程访问时造成的缓存击穿情况
         String secretKey = lock(cacheKey, daoActionTimeout);
 
         try {
