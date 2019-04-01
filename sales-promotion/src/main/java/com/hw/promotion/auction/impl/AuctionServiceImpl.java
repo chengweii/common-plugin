@@ -3,10 +3,12 @@ package com.hw.promotion.auction.impl;
 import com.google.common.base.Joiner;
 import com.hw.common.Result;
 import com.hw.lock.DistributedLock;
-import com.hw.promotion.auction.AuctionService;
+import com.hw.promotion.auction.AuctionInnerService;
 import com.hw.promotion.auction.dao.OfferRecordDao;
 import com.hw.promotion.auction.entity.AuctionInfo;
 import com.hw.promotion.auction.entity.OfferRecord;
+import com.hw.promotion.auction.entity.param.OfferAfterParam;
+import com.hw.promotion.auction.entity.param.OfferCheckParam;
 import com.hw.promotion.auction.entity.param.OfferParam;
 import com.hw.util.JsonUtils;
 import redis.clients.jedis.Jedis;
@@ -19,7 +21,7 @@ import javax.annotation.Resource;
  * @author chengwei11
  * @date 2019/2/15
  */
-public class AuctionServiceImpl implements AuctionService {
+public class AuctionServiceImpl implements AuctionInnerService {
     @Resource
     private DistributedLock distributedLock;
     @Resource
@@ -36,15 +38,18 @@ public class AuctionServiceImpl implements AuctionService {
         // 首先获取当前拍卖信息
         AuctionInfo auctionInfo = getCurrentAuctionInfo(offerParam.getAuctionId());
 
-        // 然后校验活动有效性、参与资格
-        Result<Boolean> checkResult = check(auctionInfo, offerParam);
+        // 出价校验
+        OfferCheckParam offerCheckParam = new OfferCheckParam();
+        offerCheckParam.setAuctionInfo(auctionInfo);
+        offerCheckParam.setOfferParam(offerParam);
+        Result<Boolean> checkResult = offerCheck(offerCheckParam);
         if (!checkResult.isSuccess()) {
             return checkResult;
         }
 
         String offerLockKey = Joiner.on("_").join(OFFER_LOCK_KEY_PREFIX, offerParam.getAuctionId());
         // 出价操作直接上锁
-        DistributedLock.Result<Boolean> result=distributedLock.lock(offerLockKey, OFFER_LOCK_TIMEOUT, DistributedLock.LockMode.FAIL_OVER, () -> {
+        DistributedLock.Result<Boolean> result = distributedLock.lock(offerLockKey, OFFER_LOCK_TIMEOUT, DistributedLock.LockMode.FAIL_OVER, () -> {
             // 双重校验出价有效性
             if (offerParam.getPrice() < auctionInfo.getCurrentOfferPrice()) {
                 return DistributedLock.Result.success(1004, "出价必须超过最高价", false);
@@ -54,20 +59,16 @@ public class AuctionServiceImpl implements AuctionService {
 
             boolean flag = offerRecordDao.insert(offerRecord);
 
-            // 出价成功，刷新最新出价信息到当前拍卖信息缓存
-            if(flag){
-                refreshAuctionCurrentInfo(offerRecord);
+            if (flag) {
+                OfferAfterParam offerAfterParam = new OfferAfterParam();
+                offerAfterParam.setOfferRecord(offerRecord);
+                offerAfterParam(offerAfterParam);
             }
 
             return DistributedLock.Result.success(true);
         });
 
-        return Result.common(result.getCode(),result.getMessage(),result.getResult());
-    }
-
-    private void refreshAuctionCurrentInfo(OfferRecord offerRecord){
-        // TODO 公平性保证的关键策略：最后5秒钟前台查询最新出价信息时仅显示5秒前的最新出价，防止刷子用户最后一秒出价
-        // 刷新最新出价信息到当前拍卖信息缓存
+        return Result.common(result.getCode(), result.getMessage(), result.getResult());
     }
 
     private AuctionInfo getCurrentAuctionInfo(Long auctionId) {
@@ -75,6 +76,15 @@ public class AuctionServiceImpl implements AuctionService {
         String auctionInfoJson = jedis.get(auctionCurrentInfoCacheKey);
         AuctionInfo auctionInfo = JsonUtils.fromJson(auctionInfoJson, AuctionInfo.class);
         return auctionInfo;
+    }
+
+    // region 出价校验
+
+    @Override
+    public Result<Boolean> offerCheck(OfferCheckParam offerCheckParam) {
+        // 然后校验活动有效性、参与资格
+        Result<Boolean> checkResult = check(offerCheckParam.getAuctionInfo(), offerCheckParam.getOfferParam());
+        return checkResult;
     }
 
     private Result<Boolean> check(AuctionInfo auctionInfo, OfferParam offerParam) {
@@ -102,6 +112,29 @@ public class AuctionServiceImpl implements AuctionService {
     }
 
     private Result<Boolean> risk(AuctionInfo auctionInfo, OfferParam offerParam) {
+        // TODO 待接入风控
         return Result.failed(false);
     }
+
+    // endregion 出价校验
+
+    // region 出价后置处理
+
+    @Override
+    public Result<Boolean> offerAfterParam(OfferAfterParam offerAfterParam) {
+        refreshAuctionCurrentInfo(offerAfterParam.getOfferRecord());
+        return Result.success(true);
+    }
+
+    /**
+     * 出价成功，刷新最新出价信息到当前拍卖信息缓存
+     *
+     * @param offerRecord
+     */
+    private void refreshAuctionCurrentInfo(OfferRecord offerRecord) {
+        // TODO 公平性保证的关键策略：最后5秒钟前台查询最新出价信息时仅显示5秒前的最新出价，防止刷子用户最后一秒出价
+        // 刷新最新出价信息到当前拍卖信息缓存
+    }
+
+    // endregion 出价后置处理
 }
