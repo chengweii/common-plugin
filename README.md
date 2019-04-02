@@ -42,3 +42,6 @@
 ## 【parallel-stream】并行处理组件（待开发）
 基于线程池实现类似于java parallel stream的并行处理功能。
 
+## 【didi-taxi】类滴滴打车服务简单实现（开发中）
+一个类滴滴的基本打车服务实现。
+

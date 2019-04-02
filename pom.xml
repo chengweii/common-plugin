@@ -19,6 +19,7 @@
         <module>sales-promotion</module>
         <module>parallel-stream</module>
         <module>link-isolation</module>
+        <module>didi-taxi</module>
     </modules>
     <groupId>com.hw</groupId>
     <artifactId>common-plugin</artifactId>
