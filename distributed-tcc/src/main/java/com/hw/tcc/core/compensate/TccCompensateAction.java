@@ -1,11 +1,11 @@
-package com.hw.tcc.compensate;
+package com.hw.tcc.core.compensate;
 
 /**
  * 补偿动作
  * 注意：由于补偿采用的是重试策略，所以补偿动作实现请务必支持幂等操作，否则可能会造成重复操作情况。
  *
  * @author chengwei11
- * @date 2019/1/18
+ * @date 2019/4/12
  */
 public interface TccCompensateAction {
     /**

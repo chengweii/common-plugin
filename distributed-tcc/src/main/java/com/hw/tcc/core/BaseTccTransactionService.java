@@ -1,11 +1,13 @@
-package com.hw.tcc.provider;
+package com.hw.tcc.core;
 
-import com.hw.tcc.TccService;
-import com.hw.tcc.compensate.TccCompensateAction;
-import com.hw.tcc.config.TccConfig;
-import com.hw.tcc.persistence.TccTransaction;
-import com.hw.tcc.serialize.JsonTccSerializer;
-import com.hw.tcc.serialize.TccSerializer;
+import com.hw.tcc.core.compensate.TccCompensateAction;
+import com.hw.tcc.core.config.TccConfig;
+import com.hw.tcc.core.lock.TccLockService;
+import com.hw.tcc.core.persistence.TccTransaction;
+import com.hw.tcc.core.serialize.JsonTccSerializer;
+import com.hw.tcc.core.serialize.TccSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -18,17 +20,20 @@ import java.util.Optional;
  * @author chengwei11
  * @date 2019/1/18
  */
-public abstract class BaseTccService implements TccService {
+public abstract class BaseTccTransactionService implements TccTransactionService, TccLockService {
+    private final static Logger LOGGER = LoggerFactory.getLogger(BaseTccTransactionService.class);
+
     protected TccSerializer tccSerializer;
     protected TccConfig tccConfig;
 
-    public BaseTccService(TccSerializer tccSerializer,
-                          TccConfig tccConfig) {
+    public BaseTccTransactionService(TccSerializer tccSerializer, TccConfig tccConfig) {
         this.tccSerializer = tccSerializer;
         this.tccConfig = tccConfig;
+
+        LOGGER.info("分布式补偿事务配置信息：tccConfig={}", tccConfig);
     }
 
-    public BaseTccService(TccConfig tccConfig) {
+    public BaseTccTransactionService(TccConfig tccConfig) {
         this(new JsonTccSerializer(), tccConfig);
     }
 

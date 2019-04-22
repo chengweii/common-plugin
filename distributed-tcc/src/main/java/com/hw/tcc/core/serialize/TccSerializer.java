@@ -1,4 +1,4 @@
-package com.hw.tcc.serialize;
+package com.hw.tcc.core.serialize;
 
 /**
  * 序列化器
