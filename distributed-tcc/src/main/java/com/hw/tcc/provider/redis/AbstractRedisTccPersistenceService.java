@@ -26,7 +26,7 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
         boolean result = false;
         try {
             boolean saveResult = saveTccTransaction(transaction);
-            result = saveResult && this.zAdd(TCC_TRANSACTION_RECORD_KEY, transaction.getNextAt().getTime(), transaction.getTransactionId());
+            result = saveResult && this.zAdd(TCC_TRANSACTION_RECORD_KEY, transaction.getNextAt().getTime(), getTransactionRecordKey(transaction.getTransactionId()));
             return result;
         } finally {
             LOGGER.debug("开启事务：transaction={},result={}", transaction, result);
@@ -37,13 +37,14 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
     public TccTransaction get(String transactionId) {
         LOGGER.debug("获取事务：transactionId={}", transactionId);
 
+        String transactionIdKey = getTransactionRecordKey(transactionId);
         // 根据事务ID列表获取事务信息列表
-        Map<String, String> result = mGet(Sets.newHashSet(transactionId));
+        Map<String, String> result = mGet(Sets.newHashSet(transactionIdKey));
         if (result == null || result.size() == 0) {
             return null;
         }
 
-        String data = result.get(transactionId);
+        String data = result.get(transactionIdKey);
         TccTransaction tccTransaction = getTccSerializer().deserialize(data, TccTransaction.class);
 
         LOGGER.debug("获取事务：tccTransaction={}", tccTransaction);
@@ -53,7 +54,7 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
 
     @Override
     public boolean end(TccTransaction transaction) {
-        this.zRem(TCC_TRANSACTION_RECORD_KEY, transaction.getTransactionId());
+        this.zRem(TCC_TRANSACTION_RECORD_KEY, getTransactionRecordKey(transaction.getTransactionId()));
         this.del(getTransactionRecordKey(transaction.getTransactionId()));
 
         LOGGER.info("分布式补偿事务持久化日志备份结束：transactionId={},transaction={}", transaction.getTransactionId(), transaction);
@@ -71,7 +72,7 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
     @Override
     public boolean retry(TccTransaction transaction) {
         LOGGER.debug("重试事务：transaction={}", transaction);
-        boolean result = saveTccTransaction(transaction) && zAdd(TCC_TRANSACTION_RECORD_KEY, transaction.getNextAt().getTime(), transaction.getTransactionId());
+        boolean result = saveTccTransaction(transaction) && zAdd(TCC_TRANSACTION_RECORD_KEY, transaction.getNextAt().getTime(), getTransactionRecordKey(transaction.getTransactionId()));
         LOGGER.debug("重试事务：transaction={},result={}", transaction, result);
         return result;
     }
@@ -84,7 +85,7 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
      */
     private boolean saveTccTransaction(TccTransaction transaction) {
         String transactionData = this.getTccSerializer().serialize(transaction);
-        long expireTime = (getTccConfig().getMaxDelaySeconds() + nextLong(1000, 100 * 1000));
+        long expireTime = (getTccConfig().getMaxDelaySeconds() * 1000 + nextLong(1000, 100 * 1000));
 
         LOGGER.info("分布式补偿事务持久化日志备份开始：transactionId={},transaction={}", transaction.getTransactionId(), transactionData);
 
@@ -129,10 +130,10 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
         stringSet.stream().forEach(item -> {
             String data = result.get(item);
             TccTransaction tccTransaction = getTccSerializer().deserialize(data, TccTransaction.class);
-            if (TccTransaction.Status.RETRYING.equals(tccTransaction.getStatus())) {
+            if (TccTransaction.Status.RETRYING.getValue().equals(tccTransaction.getStatus())) {
                 // 待重试事务
                 tccTransactionList.add(tccTransaction);
-            } else if (TccTransaction.Status.EXECUTING.equals(tccTransaction.getStatus())
+            } else if (TccTransaction.Status.EXECUTING.getValue().equals(tccTransaction.getStatus())
                     && System.currentTimeMillis() - tccTransaction.getNextAt().getTime() > this.getTccConfig().getTransactionTimeout()) {
                 // 执行超时事务
                 tccTransactionList.add(tccTransaction);

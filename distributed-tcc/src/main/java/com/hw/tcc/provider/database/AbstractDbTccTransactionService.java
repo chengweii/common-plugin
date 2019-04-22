@@ -52,6 +52,7 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
 
         this.delaySecondsList = Stream.of(this.tccConfig.getDelaySecondsList().split(",")).map(item -> Integer.valueOf(item)).collect(Collectors.toList());
         this.tccConfig.setMaxDelaySeconds(delaySecondsList.stream().mapToLong(Integer::longValue).sum());
+        this.tccConfig.setMaxRetryTimes(delaySecondsList.size());
         this.tccPersistenceService.setTccSerializer(this.tccSerializer);
         this.tccPersistenceService.setTccConfig(this.tccConfig);
         initTransactionCompensateExecutor();
@@ -70,7 +71,7 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
                 new ThreadPoolExecutor.AbortPolicy());
 
         this.tccCompensateScanExecutor = new ScheduledThreadPoolExecutor(1, new ThreadFactoryBuilder()
-                .setNameFormat("tccCompensateScanExecutor-thread-%d").build());
+                .setNameFormat("tccCompensateScanExecutor-thread-%d").setDaemon(true).build());
 
         this.tccCompensateScanExecutor.scheduleAtFixedRate(() -> {
             this.compensate();

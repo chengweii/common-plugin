@@ -64,11 +64,11 @@ public class TccTransaction implements Serializable {
         FAILED((byte) 3);
         private byte value;
 
-        Status(byte value) {
+        Status(Byte value) {
             this.value = value;
         }
 
-        public byte getValue() {
+        public Byte getValue() {
             return this.value;
         }
     }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -33,6 +34,7 @@ public class Demo implements TccCompensateAction {
                 @Override
                 public void run() {
                     try {
+                        Thread.sleep((new Random()).nextInt(60 * 1000));
                         demo.test();
                     } catch (Throwable e) {
                         e.printStackTrace();
@@ -48,8 +50,9 @@ public class Demo implements TccCompensateAction {
     public void test() throws Throwable {
         Map<String, Object> outerData = new HashMap<String, Object>();
         Map<String, Object> transactionData = new HashMap<String, Object>();
+        transactionData.put("d", System.currentTimeMillis());
 
-        UsedTccTransactionService.Result<Map<String, Object>> transactionResult = tccService.execute("businessUniqueKey", transactionData, () -> {
+        UsedTccTransactionService.Result<Map<String, Object>> transactionResult = tccService.execute("businessUniqueKey_" + System.currentTimeMillis(), transactionData, () -> {
             Map<String, Object> result = businessAction(outerData);
             if (result == null) {
                 return UsedTccTransactionService.Result.failed(result);
@@ -62,27 +65,12 @@ public class Demo implements TccCompensateAction {
             Map<String, Object> businessResult = transactionResult.getResult();
             System.out.println(businessResult);
         }
-
-
-        UsedTccTransactionService.Result<Map<String, Object>> transactionResult1 = tccService.execute("businessUniqueKey1", transactionData, this.getClass(), () -> {
-            Map<String, Object> result = businessAction1(outerData);
-            if (result == null) {
-                return UsedTccTransactionService.Result.failed(result);
-            } else {
-                return UsedTccTransactionService.Result.success(result);
-            }
-        });
-
-        if (transactionResult1 != null) {
-            Map<String, Object> businessResult1 = transactionResult1.getResult();
-            System.out.println(businessResult1);
-        }
     }
 
     public Map<String, Object> businessAction(Map<String, Object> data) {
         // 业务操作
-        System.out.println("执行业务操作");
-        return null;
+        System.out.println(String.format("执行业务操作:%s", data));
+        return System.currentTimeMillis() % 2 == 0 ? null : new HashMap<>();
     }
 
     public Map<String, Object> businessAction1(Map<String, Object> data) {

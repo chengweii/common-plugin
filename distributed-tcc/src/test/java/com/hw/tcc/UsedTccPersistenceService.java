@@ -1,15 +1,12 @@
 package com.hw.tcc;
 
 import com.hw.tcc.provider.redis.AbstractRedisTccPersistenceService;
-import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Pipeline;
 
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,48 +83,19 @@ public class UsedTccPersistenceService extends AbstractRedisTccPersistenceServic
             if (CollectionUtils.isEmpty(keys)) {
                 return null;
             }
-
-            Pipeline pipelineClient = redisClient.pipelined();
-
-            keys.stream().forEach(item -> {
-                pipelineClient.get(serialize(item));
-            });
-
-            List<Object> list = pipelineClient.syncAndReturnAll();
-
-            if (CollectionUtils.isEmpty(list)) {
-                return null;
-            }
-
-            List<String> temp = keys.stream().collect(Collectors.toList());
-
+            List<String> list = redisClient.mget(keys.toArray(new String[keys.size()]));
             Map<String, String> result = new HashMap<String, String>(keys.size());
+            List<String> temp = keys.stream().collect(Collectors.toList());
             keys.stream().forEach(item -> {
-                Object value = list.get(temp.indexOf(item));
-                if (value instanceof byte[]) {
-                    result.put(item, deserialize((byte[]) value));
+                String value = list.get(temp.indexOf(item));
+                if (value != null) {
+                    result.put(item, value);
                 }
             });
 
             return result;
         } finally {
             redisClient.close();
-        }
-    }
-
-    private byte[] serialize(String str) throws SerializationException {
-        try {
-            return str == null ? null : str.getBytes(Charset.forName("UTF-8"));
-        } catch (Exception var3) {
-            throw new SerializationException("Serialize String to byte[] exception.", var3);
-        }
-    }
-
-    private String deserialize(byte[] bytes) throws SerializationException {
-        try {
-            return bytes == null ? null : new String(bytes, Charset.forName("UTF-8"));
-        } catch (Exception var3) {
-            throw new SerializationException("Deserialize byte[] to String exception.", var3);
         }
     }
 
