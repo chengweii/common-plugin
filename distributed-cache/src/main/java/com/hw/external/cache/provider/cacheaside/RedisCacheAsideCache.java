@@ -1,8 +1,8 @@
-package com.hw.cache.provider.cacheaside;
+package com.hw.external.cache.provider.cacheaside;
 
-import com.hw.cache.CacheAsideCache;
-import com.hw.cache.provider.localcache.GuavaLocalCache;
-import com.hw.cache.serialize.CacheSerializer;
+import com.hw.external.cache.CacheAsideCache;
+import com.hw.external.cache.provider.localcache.GuavaLocalCache;
+import com.hw.external.cache.serialize.CacheSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;

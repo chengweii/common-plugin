@@ -1,4 +1,4 @@
-package com.hw.cache;
+package com.hw.external.cache;
 
 /**
  * 过期自动更新型缓存服务

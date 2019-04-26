@@ -1,4 +1,4 @@
-package com.hw.cache.serialize;
+package com.hw.external.cache.serialize;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

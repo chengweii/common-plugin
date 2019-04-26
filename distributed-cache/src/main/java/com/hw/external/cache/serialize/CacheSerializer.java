@@ -1,4 +1,4 @@
-package com.hw.cache.serialize;
+package com.hw.external.cache.serialize;
 
 /**
  * 序列化器

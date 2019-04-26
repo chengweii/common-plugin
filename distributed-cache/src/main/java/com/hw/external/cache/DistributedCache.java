@@ -1,6 +1,6 @@
-package com.hw.cache;
+package com.hw.external.cache;
 
-import com.hw.cache.provider.cacheaside.RedisCacheAsideCache;
+import com.hw.external.cache.provider.cacheaside.RedisCacheAsideCache;
 
 /**
  * 分布式缓存服务

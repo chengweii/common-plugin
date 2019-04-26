@@ -1,6 +1,6 @@
-package com.hw.cache.provider.localcache;
+package com.hw.external.cache.provider.localcache;
 
-import com.hw.cache.LocalCache;
+import com.hw.external.cache.LocalCache;
 
 /**
  * Guava本地缓存

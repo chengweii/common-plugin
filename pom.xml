@@ -20,6 +20,7 @@
         <module>parallel-stream</module>
         <module>link-isolation</module>
         <module>didi-taxi</module>
+        <module>framework</module>
     </modules>
     <groupId>com.hw</groupId>
     <artifactId>common-plugin</artifactId>

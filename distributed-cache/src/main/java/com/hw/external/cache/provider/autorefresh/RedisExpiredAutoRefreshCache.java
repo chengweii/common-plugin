@@ -1,9 +1,9 @@
-package com.hw.cache.provider.autorefresh;
+package com.hw.external.cache.provider.autorefresh;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.hw.cache.ExpiredAutoRefreshCache;
-import com.hw.cache.provider.cacheaside.RedisCacheAsideCache;
-import com.hw.cache.serialize.CacheSerializer;
+import com.hw.external.cache.ExpiredAutoRefreshCache;
+import com.hw.external.cache.provider.cacheaside.RedisCacheAsideCache;
+import com.hw.external.cache.serialize.CacheSerializer;
 import org.springframework.beans.factory.InitializingBean;
 import redis.clients.jedis.Jedis;
 

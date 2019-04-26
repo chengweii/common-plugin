@@ -1,4 +1,4 @@
-package com.hw.cache;
+package com.hw.external.cache;
 
 /**
  * 缓存服务

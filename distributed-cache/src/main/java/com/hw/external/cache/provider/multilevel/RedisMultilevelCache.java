@@ -1,8 +1,8 @@
-package com.hw.cache.provider.multilevel;
+package com.hw.external.cache.provider.multilevel;
 
-import com.hw.cache.MultilevelCache;
-import com.hw.cache.provider.cacheaside.RedisCacheAsideCache;
-import com.hw.cache.serialize.CacheSerializer;
+import com.hw.external.cache.MultilevelCache;
+import com.hw.external.cache.provider.cacheaside.RedisCacheAsideCache;
+import com.hw.external.cache.serialize.CacheSerializer;
 import redis.clients.jedis.Jedis;
 
 /**
