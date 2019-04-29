@@ -33,10 +33,13 @@ public class RpcAspect {
     public Object process(ProceedingJoinPoint point) throws Throwable {
         Object[] args = point.getArgs();
         String methodName = getFullMethodName(point);
+        long start = System.currentTimeMillis();
 
         LOGGER.info("RpcAspect:method={},args={}", methodName, args);
 
         Object returnValue = point.proceed(args);
+
+        LOGGER.info("RpcAspect:method={},args={},执行耗时={}", methodName, args, System.currentTimeMillis() - start);
 
         return returnValue;
     }
