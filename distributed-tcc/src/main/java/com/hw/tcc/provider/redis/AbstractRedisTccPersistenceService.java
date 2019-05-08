@@ -123,9 +123,11 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
     public List<TccTransaction> scan() {
         LOGGER.debug("开始扫描待补偿事务，time={}", System.currentTimeMillis());
 
-        // 获取在当前最大事务失效时点过期时间范围内的事务ID列表
+        // 获取扫描周期时间范围内的事务ID列表
         long maxCount = getTccConfig().getMaxCount() > 0 ? getTccConfig().getMaxCount() - 1 : 0;
-        Set<String> stringSet = zRangeByScore(TCC_TRANSACTION_RECORD_KEY, 0, System.currentTimeMillis() + this.getTccConfig().getTransactionTimeout(), 0, maxCount);
+        long maxExecuteTime = System.currentTimeMillis() + this.getTccConfig().getScanPeriod();
+
+        Set<String> stringSet = zRangeByScore(TCC_TRANSACTION_RECORD_KEY, 0, maxExecuteTime, 0, maxCount);
         if (stringSet == null || stringSet.size() <= 0) {
             return null;
         }
@@ -138,6 +140,7 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
             return null;
         }
 
+        // 仅筛选待重试、执行超时事务
         List<TccTransaction> tccTransactionList = new ArrayList<TccTransaction>(result.size());
         stringSet.stream().forEach(item -> {
             String data = result.get(item);

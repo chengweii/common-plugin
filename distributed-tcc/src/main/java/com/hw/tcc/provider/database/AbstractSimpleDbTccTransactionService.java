@@ -34,7 +34,7 @@ public abstract class AbstractSimpleDbTccTransactionService extends AbstractDbTc
 
         for (TccTransaction transaction : transactionList) {
             executeTccCompensateAction(transaction);
-            if (isRetryInCurrentPeriod(transaction.getNextAt().getTime())) {
+            if (isRetryInCurrentPeriod(transaction)) {
                 executeTccCompensateAction(transaction);
             }
         }

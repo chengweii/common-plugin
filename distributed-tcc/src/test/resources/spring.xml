@@ -9,9 +9,11 @@
         <property name="keepAliveTime" value="60000"></property>
         <property name="queueCapacity" value="8000"></property>
         <property name="transactionTimeout" value="3000"></property>
+        <property name="compensateTimeout" value="3000"></property>
         <property name="maxCount" value="1000"></property>
         <property name="delaySecondsList" value="1,3,10,20,60,600,3600,7200"></property>
         <property name="lockTimeout" value="10000"></property>
-        <property name="tickDuration" value="20"></property>
+        <property name="ticksPerWheel" value="100"></property>
+        <property name="scanPeriod" value="3000"></property>
     </bean>
 </beans>

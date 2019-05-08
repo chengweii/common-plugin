@@ -61,9 +61,9 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
     private void initTransactionCompensateExecutor() {
         LOGGER.info("分布式补偿事务服务执行器（补偿事务扫描器、补偿事务延迟处理器、补偿事务执行器）初始化：tccConfig={}", tccConfig);
 
-        int ticksPerWheel = Double.valueOf(Math.ceil(tccConfig.getTransactionTimeout() / tccConfig.getTickDuration())).intValue();
+        int tickDuration = Double.valueOf(Math.ceil(tccConfig.getScanPeriod() / tccConfig.getTicksPerWheel())).intValue();
         this.tccCompensateDelayExecutor = new HashedWheelTimer(new ThreadFactoryBuilder()
-                .setNameFormat("tccCompensateDelayExecutor-thread-%d").build(), tccConfig.getTickDuration(), TimeUnit.MILLISECONDS, ticksPerWheel);
+                .setNameFormat("tccCompensateDelayExecutor-thread-%d").build(), tickDuration, TimeUnit.MILLISECONDS, tccConfig.getTicksPerWheel());
 
         this.tccCompensateExecutor = new ThreadPoolExecutor(1, tccConfig.getMaximumPoolSize(), tccConfig.getKeepAliveTime(), TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(tccConfig.getQueueCapacity()), new ThreadFactoryBuilder()
@@ -75,7 +75,7 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
 
         this.tccCompensateScanExecutor.scheduleAtFixedRate(() -> {
             this.compensate();
-        }, 0, tccConfig.getTransactionTimeout(), TimeUnit.MILLISECONDS);
+        }, 0, tccConfig.getScanPeriod(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -163,7 +163,6 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
             throw e;
         } finally {
             if (isRetry) {
-                transaction.setStatus(TccTransaction.Status.RETRYING.getValue());
                 retryTransaction(transaction);
             } else {
                 this.tccPersistenceService.end(transaction);
@@ -178,8 +177,9 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
      * @param tccTransaction 事务实体
      */
     private void retryTransaction(TccTransaction tccTransaction) {
+        tccTransaction.setStatus(TccTransaction.Status.RETRYING.getValue());
         this.tccPersistenceService.retry(tccTransaction);
-        if (isRetryInCurrentPeriod(tccTransaction.getNextAt().getTime())) {
+        if (isRetryInCurrentPeriod(tccTransaction)) {
             executeTccCompensateAction(tccTransaction);
         }
     }
@@ -187,11 +187,11 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
     /**
      * 是否要在当前扫描周期内重试，扫描周期内待执行的事务立刻执行（放入延迟队列中）
      *
-     * @param nextAt 下次重试的时间
+     * @param tccTransaction 补偿事务
      * @return 是否
      */
-    protected boolean isRetryInCurrentPeriod(long nextAt) {
-        return nextAt - System.currentTimeMillis() <= tccConfig.getTransactionTimeout();
+    protected boolean isRetryInCurrentPeriod(TccTransaction tccTransaction) {
+        return TccTransaction.Status.RETRYING.getValue().equals(tccTransaction.getStatus()) && tccTransaction.getNextAt().getTime() - System.currentTimeMillis() <= tccConfig.getScanPeriod();
     }
 
     /**
@@ -211,7 +211,7 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
             });
 
             try {
-                future.get(tccConfig.getTransactionTimeout(), TimeUnit.MILLISECONDS);
+                future.get(tccConfig.getCompensateTimeout(), TimeUnit.MILLISECONDS);
             } catch (TimeoutException | InterruptedException | ExecutionException e) {
                 if (e instanceof TimeoutException) {
                     future.cancel(true);
@@ -225,6 +225,8 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
         TccTransaction currentTccTransaction = tccPersistenceService.get(tccTransaction.getTransactionId());
         if (currentTccTransaction == null) {
             // 如果事务补偿已执行完毕（结束、失败）则不再执行补偿动作
+            tccTransaction.setStatus(TccTransaction.Status.END.getValue());
+            LOGGER.debug("分布式事务补偿已完成，本次补偿不再执行：transaction={}", tccTransaction);
             return;
         }
 

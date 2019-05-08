@@ -61,7 +61,11 @@ public class TccTransaction implements Serializable {
         /**
          * 最终执行失败
          */
-        FAILED((byte) 3);
+        FAILED((byte) 3),
+        /**
+         * 执行完成
+         */
+        END((byte) 4);
         private byte value;
 
         Status(Byte value) {

@@ -11,9 +11,13 @@ import lombok.Data;
 @Data
 public class TccConfig {
     /**
-     * 事务补偿超时时间（毫秒）
+     * 事务执行超时时间（毫秒）
      */
     private long transactionTimeout;
+    /**
+     * 事务补偿超时时间（毫秒）
+     */
+    private long compensateTimeout;
     /**
      * 分布式锁超时时间（毫秒）
      */
@@ -36,8 +40,15 @@ public class TccConfig {
      */
     private Long maxDelaySeconds;
 
-    private long tickDuration;
+    /**
+     * 时间轮转动最小单位（毫秒）
+     */
+    private int ticksPerWheel;
 
+    /**
+     * 扫描周期（毫秒）
+     */
+    private long scanPeriod;
 
     /**
      * 并行补偿服务线程池线程最大线程数
