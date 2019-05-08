@@ -92,8 +92,6 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
 
     @Override
     public <T, R> Result<T> execute(String transactionId, R transactionData, TransactionAction<T> transactionAction) {
-        ResultWrapper<T> finalResult = new ResultWrapper<T>();
-
         Class compensateActionClz;
         try {
             compensateActionClz = Class.forName(new Exception().getStackTrace()[1].getClassName());
@@ -105,12 +103,7 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
             throw new RuntimeException("没有找到事务补偿实现类");
         }
 
-        lock(getTransactionLockKey(transactionId), tccConfig.getLockTimeout(), () -> {
-            Result<T> result = executeTransaction(transactionId, transactionData, compensateActionClz, transactionAction);
-            finalResult.setResult(result);
-        });
-
-        return finalResult.getResult();
+        return this.execute(transactionId, transactionData, compensateActionClz, transactionAction);
     }
 
     /**
@@ -141,6 +134,7 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
     }
 
     private <T, R> Result<T> executeTransaction(String transactionId, R transactionData, Class<? extends TccCompensateAction> compensateActionClz, TransactionAction<T> transactionAction) {
+        long start = System.currentTimeMillis();
         boolean isRetry = false;
         TccTransaction transaction = new TccTransaction();
         try {
@@ -173,20 +167,31 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
                 retryTransaction(transaction);
             } else {
                 this.tccPersistenceService.end(transaction);
+                LOGGER.debug("事务：transactionId={} 执行成功，耗时：{}ms", transactionId, System.currentTimeMillis() - start);
             }
         }
     }
 
     /**
-     * 重试事务，扫描周期内待执行的事务立刻执行（放入延迟队列中）
+     * 重试事务
      *
      * @param tccTransaction 事务实体
      */
     private void retryTransaction(TccTransaction tccTransaction) {
         this.tccPersistenceService.retry(tccTransaction);
-        if (tccTransaction.getNextAt().getTime() - System.currentTimeMillis() <= tccConfig.getTransactionTimeout()) {
+        if (isRetryInCurrentPeriod(tccTransaction.getNextAt().getTime())) {
             executeTccCompensateAction(tccTransaction);
         }
+    }
+
+    /**
+     * 是否要在当前扫描周期内重试，扫描周期内待执行的事务立刻执行（放入延迟队列中）
+     *
+     * @param nextAt 下次重试的时间
+     * @return 是否
+     */
+    protected boolean isRetryInCurrentPeriod(long nextAt) {
+        return nextAt - System.currentTimeMillis() <= tccConfig.getTransactionTimeout();
     }
 
     /**
@@ -237,7 +242,7 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
             tccTransactionData.setTransactionId(tccTransaction.getTransactionId());
 
             if (tccCompensateAction.execute(tccTransactionData)) {
-                LOGGER.info("分布式补偿事务重试成功：transactionId={}", tccTransaction.getTransactionId());
+                LOGGER.debug("分布式补偿事务重试成功：transactionId={}，耗时：{}ms", tccTransaction.getTransactionId(), System.currentTimeMillis() - tccTransaction.getExecuteAt().getTime());
             } else {
                 isRetry = true;
                 LOGGER.error("分布式补偿事务重试失败：transactionId={}", tccTransaction.getTransactionId());
@@ -248,10 +253,10 @@ public abstract class AbstractDbTccTransactionService extends BaseTccTransaction
         }
 
         tccTransaction.setRetryTimes(tccTransaction.getRetryTimes() + 1);
-        tccTransaction.setExecuteAt(new Date());
+        // tccTransaction.setExecuteAt(new Date());
 
         if (tccTransaction.getRetryTimes() >= this.tccConfig.getMaxRetryTimes()) {
-            LOGGER.info("分布式补偿事务重试终止：transactionId={}", tccTransaction.getTransactionId());
+            LOGGER.error("分布式补偿事务重试终止：transactionId={}，tccTransaction={}，耗时：{}ms", tccTransaction.getTransactionId(), tccTransaction, System.currentTimeMillis() - tccTransaction.getExecuteAt().getTime());
             tccTransaction.setStatus(TccTransaction.Status.FAILED.getValue());
             tccPersistenceService.fail(tccTransaction);
             return;

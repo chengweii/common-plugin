@@ -1,5 +1,6 @@
 package com.hw.tcc;
 
+import com.alibaba.fastjson.JSON;
 import com.hw.tcc.core.compensate.TccCompensateAction;
 import com.hw.tcc.core.compensate.TccTransactionData;
 import org.springframework.context.ApplicationContext;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,12 +30,12 @@ public class Demo implements TccCompensateAction {
         Demo demo = appContext.getBean(Demo.class);
 
         ExecutorService executorService = Executors.newCachedThreadPool();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1; i++) {
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        Thread.sleep((new Random()).nextInt(60 * 1000));
+                        //Thread.sleep((new Random()).nextInt(60 * 1000));
                         demo.test();
                     } catch (Throwable e) {
                         e.printStackTrace();
@@ -48,11 +49,13 @@ public class Demo implements TccCompensateAction {
     }
 
     public void test() throws Throwable {
+        String key = UUID.randomUUID().toString();
         Map<String, Object> outerData = new HashMap<String, Object>();
+        outerData.put("transactionId", key);
         Map<String, Object> transactionData = new HashMap<String, Object>();
-        transactionData.put("d", System.currentTimeMillis());
+        transactionData.put("transactionId", key);
 
-        UsedTccTransactionService.Result<Map<String, Object>> transactionResult = tccService.execute("businessUniqueKey_" + System.currentTimeMillis(), transactionData, () -> {
+        UsedTccTransactionService.Result<Map<String, Object>> transactionResult = tccService.execute(key, transactionData, () -> {
             Map<String, Object> result = businessAction(outerData);
             if (result == null) {
                 return UsedTccTransactionService.Result.failed(result);
@@ -63,25 +66,25 @@ public class Demo implements TccCompensateAction {
 
         if (transactionResult != null) {
             Map<String, Object> businessResult = transactionResult.getResult();
-            System.out.println(businessResult);
+            // System.out.println(businessResult);
         }
     }
 
     public Map<String, Object> businessAction(Map<String, Object> data) {
         // 业务操作
-        System.out.println(String.format("执行业务操作:%s", data));
-        return System.currentTimeMillis() % 2 == 0 ? null : new HashMap<>();
+        System.out.println(String.format("正在执行业务操作:%s", data));
+        return 2 % 2 == 0 ? null : new HashMap<>();
     }
 
     public Map<String, Object> businessAction1(Map<String, Object> data) {
         // 业务操作
-        System.out.println("执行业务操作1");
+        System.out.println("正在执行业务操作1");
         return new HashMap<>();
     }
 
     @Override
     public boolean execute(TccTransactionData tccTransactionData) {
-        System.out.println("执行补偿操作");
-        return true;
+        System.out.println(String.format("正在执行补偿操作:%s", JSON.toJSON(tccTransactionData)));
+        return false;
     }
 }

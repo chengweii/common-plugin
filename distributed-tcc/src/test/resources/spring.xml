@@ -5,7 +5,7 @@
     <context:component-scan base-package="com.hw.tcc"></context:component-scan>
 
     <bean id="tccConfig" class="com.hw.tcc.core.config.TccConfig">
-        <property name="maximumPoolSize" value="5"></property>
+        <property name="maximumPoolSize" value="20"></property>
         <property name="keepAliveTime" value="60000"></property>
         <property name="queueCapacity" value="8000"></property>
         <property name="transactionTimeout" value="3000"></property>

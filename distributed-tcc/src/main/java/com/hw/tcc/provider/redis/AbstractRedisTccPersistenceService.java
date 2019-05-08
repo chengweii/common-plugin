@@ -22,7 +22,6 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
 
     @Override
     public boolean begin(TccTransaction transaction) {
-        LOGGER.debug("开启事务：transaction={}", transaction);
         boolean result = false;
         try {
             boolean saveResult = saveTccTransaction(transaction);
@@ -35,46 +34,54 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
 
     @Override
     public TccTransaction get(String transactionId) {
-        LOGGER.debug("获取事务：transactionId={}", transactionId);
+        TccTransaction tccTransaction = null;
+        try {
+            String transactionIdKey = getTransactionRecordKey(transactionId);
+            // 根据事务ID列表获取事务信息列表
+            Map<String, String> result = mGet(Sets.newHashSet(transactionIdKey));
+            if (result == null || result.size() == 0) {
+                return null;
+            }
 
-        String transactionIdKey = getTransactionRecordKey(transactionId);
-        // 根据事务ID列表获取事务信息列表
-        Map<String, String> result = mGet(Sets.newHashSet(transactionIdKey));
-        if (result == null || result.size() == 0) {
-            return null;
+            String data = result.get(transactionIdKey);
+            tccTransaction = getTccSerializer().deserialize(data, TccTransaction.class);
+
+            return tccTransaction;
+        } finally {
+            LOGGER.debug("获取待补偿事务：tccTransaction={}", tccTransaction);
         }
-
-        String data = result.get(transactionIdKey);
-        TccTransaction tccTransaction = getTccSerializer().deserialize(data, TccTransaction.class);
-
-        LOGGER.debug("获取事务：tccTransaction={}", tccTransaction);
-
-        return tccTransaction;
     }
 
     @Override
     public boolean end(TccTransaction transaction) {
-        this.zRem(TCC_TRANSACTION_RECORD_KEY, getTransactionRecordKey(transaction.getTransactionId()));
-        this.del(getTransactionRecordKey(transaction.getTransactionId()));
-
-        LOGGER.info("分布式补偿事务持久化日志备份结束：transactionId={},transaction={}", transaction.getTransactionId(), transaction);
-
-        return true;
+        try {
+            this.zRem(TCC_TRANSACTION_RECORD_KEY, getTransactionRecordKey(transaction.getTransactionId()));
+            this.del(getTransactionRecordKey(transaction.getTransactionId()));
+            return true;
+        } finally {
+            LOGGER.info("分布式补偿事务持久化日志备份结束：transactionId={},transaction={}", transaction.getTransactionId(), transaction);
+        }
     }
 
     @Override
     public boolean fail(TccTransaction transaction) {
-        LOGGER.error("分布式补偿事务重试失败，请手工处理：transaction={}", transaction);
-        end(transaction);
-        return true;
+        try {
+            end(transaction);
+            return true;
+        } finally {
+            LOGGER.error("分布式事务补偿重试失败，请手工处理：transaction={}", transaction);
+        }
     }
 
     @Override
     public boolean retry(TccTransaction transaction) {
-        LOGGER.debug("重试事务：transaction={}", transaction);
-        boolean result = saveTccTransaction(transaction) && zAdd(TCC_TRANSACTION_RECORD_KEY, transaction.getNextAt().getTime(), getTransactionRecordKey(transaction.getTransactionId()));
-        LOGGER.debug("重试事务：transaction={},result={}", transaction, result);
-        return result;
+        boolean result = false;
+        try {
+            result = saveTccTransaction(transaction) && zAdd(TCC_TRANSACTION_RECORD_KEY, transaction.getNextAt().getTime(), getTransactionRecordKey(transaction.getTransactionId()));
+            return result;
+        } finally {
+            LOGGER.debug("分布式事务补偿等待重试：transaction={},result={}", transaction, result);
+        }
     }
 
     /**
@@ -84,10 +91,14 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
      * @return 是否成功
      */
     private boolean saveTccTransaction(TccTransaction transaction) {
-        String transactionData = this.getTccSerializer().serialize(transaction);
-        long expireTime = (getTccConfig().getMaxDelaySeconds() * 1000 + nextLong(1000, 100 * 1000));
-
-        LOGGER.info("分布式补偿事务持久化日志备份开始：transactionId={},transaction={}", transaction.getTransactionId(), transactionData);
+        String transactionData = null;
+        long expireTime;
+        try {
+            expireTime = (getTccConfig().getMaxDelaySeconds() * 1000 + nextLong(1000, 100 * 1000));
+            transactionData = this.getTccSerializer().serialize(transaction);
+        } finally {
+            LOGGER.info("分布式补偿事务持久化日志备份开始：transactionId={},transaction={}", transaction.getTransactionId(), transactionData);
+        }
 
         return this.set(getTransactionRecordKey(transaction.getTransactionId()), transactionData, expireTime, true);
     }
@@ -110,7 +121,7 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
 
     @Override
     public List<TccTransaction> scan() {
-        LOGGER.debug("开始扫描事务，time={}", System.currentTimeMillis());
+        LOGGER.debug("开始扫描待补偿事务，time={}", System.currentTimeMillis());
 
         // 获取在当前最大事务失效时点过期时间范围内的事务ID列表
         long maxCount = getTccConfig().getMaxCount() > 0 ? getTccConfig().getMaxCount() - 1 : 0;
@@ -121,8 +132,9 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
 
         // 根据事务ID列表获取事务信息列表
         Map<String, String> result = mGet(stringSet);
-        LOGGER.debug("扫描事务结果，result={}", result);
+
         if (result == null || result.size() == 0) {
+            LOGGER.debug("未扫描到待补偿事务");
             return null;
         }
 
@@ -140,7 +152,7 @@ public abstract class AbstractRedisTccPersistenceService extends AbstractTccPers
             }
         });
 
-        LOGGER.debug("扫描事务结果，tccTransactionList={}", tccTransactionList);
+        LOGGER.debug("扫描待补偿事务完成：{}", tccTransactionList);
 
         return tccTransactionList;
     }

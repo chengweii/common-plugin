@@ -26,14 +26,14 @@ public interface TccTransactionService {
      * 执行补偿事务
      * 注意：事务补偿动作类型默认为当前类，所以当前类必须实现
      *
+     * @param <T>               事务动作返回结果类型
+     * @param <R>               事务依赖数据对象类型
      * @param transactionId     事务ID：用于支持补偿动作重试时的业务去重和幂等
      * @param transactionData   事务依赖数据对象
      * @param transactionAction 事务动作
-     * @param <T>               事务动作返回结果类型
-     * @param <R>               事务依赖数据对象类型
      * @return 事务动作返回结果
      */
-    <T, R> Result<T> execute(String transactionId, R transactionData, TransactionAction<T> transactionAction);
+    <T, R> Result execute(String transactionId, R transactionData, TransactionAction<T> transactionAction);
 
     /**
      * 补偿失败事务（执行补偿动作）
